@@ -1,195 +1,424 @@
-export default function AICarouselGenerator() {
-  const [prompt, setPrompt] = React.useState("");
-  const [style, setStyle] = React.useState("Motivasi");
-  const [loading, setLoading] = React.useState(false);
-  const [images, setImages] = React.useState([]);
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>AI Carousel Pro - 每个幻灯片独立提示词 | 智能轮播图生成器</title>
+    <!-- TailwindCSS + Font Awesome + Google Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <!-- React & ReactDOM -->
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .carousel-card { transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
+        .carousel-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.6); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #1e1e2a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out; }
+        .bg-gradient-custom { background: radial-gradient(circle at 10% 20%, #0f172a, #020617); }
+        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .slide-prompt-input:focus { box-shadow: 0 0 0 2px rgba(59,130,246,0.5); }
+    </style>
+</head>
+<body class="bg-gradient-custom antialiased">
 
-  const styles = [
-    "Motivasi",
-    "Bisnis",
-    "Mindset",
-    "Quotes",
-    "Storytelling",
-    "Minimalis",
-  ];
+<div id="root"></div>
 
-  const generateImages = async () => {
-    if (!prompt) return;
+<script type="text/babel">
+    // AI Carousel Generator - Versi Premium dengan PROMPT UNTUK MASING-MASING SLIDE
+    // Pengguna bisa mengatur prompt berbeda untuk setiap slide (slide 1 s/d 4)
+    const { useState } = React;
 
-    try {
-      setLoading(true);
-      setImages([]);
+    const AICarouselGenerator = () => {
+        const [globalTheme, setGlobalTheme] = useState(""); // tema utama inspirasi
+        const [style, setStyle] = useState("Motivasi");
+        const [loading, setLoading] = useState(false);
+        const [images, setImages] = useState([]);
+        const [downloadProgress, setDownloadProgress] = useState(false);
+        
+        // State untuk prompt per slide (individu)
+        const [slidePrompts, setSlidePrompts] = useState({
+            1: "",
+            2: "",
+            3: "",
+            4: ""
+        });
 
-      const generatedImages = [];
-
-      for (let i = 0; i < 4; i++) {
-        const randomSeed = Math.floor(Math.random() * 999999);
-
-        const slidePrompts = [
-          `Slide 1 cover utama tentang ${prompt}`,
-          `Slide 2 penjelasan cinematic tentang ${prompt}`,
-          `Slide 3 emotional storytelling tentang ${prompt}`,
-          `Slide 4 ending powerful motivation tentang ${prompt}`,
+        const styles = [
+            "Motivasi", "Bisnis", "Mindset", "Quotes", 
+            "Storytelling", "Minimalis", "Elegant", "Bold Typography", "Cinematic", "Pastel Aesthetic"
         ];
 
-        const enhancedPrompt = `${slidePrompts[i]}, ${style}, instagram carousel design, cinematic lighting, modern aesthetic, ultra detailed, viral social media content, professional typography, high quality, different composition, unique scene`;
+        // Helper untuk update prompt per slide
+        const updateSlidePrompt = (slideId, value) => {
+            setSlidePrompts(prev => ({ ...prev, [slideId]: value }));
+        };
 
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(
-          enhancedPrompt
-        )}?width=1024&height=1536&seed=${randomSeed}&model=flux`;
+        // Mengisi prompt otomatis dari global theme + template cerdas jika slide prompt kosong
+        const autoFillSlidePromptsFromTheme = () => {
+            if (!globalTheme.trim()) {
+                alert("💡 Isi terlebih dahulu 'Tema Utama / Ide Konten' untuk auto-generate prompt setiap slide.");
+                return;
+            }
+            const theme = globalTheme;
+            setSlidePrompts({
+                1: `🔥 SLIDE 1 - COVER MENARIK: "${theme}" – buat judul epik dan visual pembuka yang powerful`,
+                2: `📌 SLIDE 2 - PENJELASAN MENDALAM: Uraikan poin penting tentang "${theme}", infografis modern, storytelling visual`,
+                3: `💫 SLIDE 3 - EMOSI & INSPIRASI: Ceritakan momen transformatif, emotional journey terkait "${theme}", suasana hangat`,
+                4: `🚀 SLIDE 4 - PENUTUP VIRAL: Call to action kuat, motivasi akhir tentang "${theme}", kesan mendalam`
+            });
+        };
 
-        generatedImages.push({
-          id: i + 1,
-          url: imageUrl,
-          prompt: slidePrompts[i],
-        });
-      }
+        // Generate gambar berdasarkan prompt per slide (masing-masing slide punya prompt unik)
+        const generateImages = async () => {
+            // Validasi: pastikan minimal ada satu prompt yang tidak kosong atau global theme
+            const hasAnyPrompt = Object.values(slidePrompts).some(p => p.trim().length > 0) || globalTheme.trim().length > 0;
+            if (!hasAnyPrompt) {
+                alert("✍️ Silakan isi Tema Utama atau isi prompt untuk masing-masing slide! (minimal satu slide memiliki prompt)");
+                return;
+            }
 
-      setImages(generatedImages);
-    } catch (error) {
-      console.error("Error generating images:", error);
-      alert("Gagal generate image AI");
-    } finally {
-      setLoading(false);
-    }
-  };
+            try {
+                setLoading(true);
+                setImages([]);
+                const generatedImages = [];
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 text-white p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold mb-3">
-            AI Carousel Image Generator
-          </h1>
-          <p className="text-gray-400 text-lg">
-            Buat konten carousel Instagram otomatis dengan AI
-          </p>
-        </div>
+                // Untuk setiap slide (1-4), gunakan prompt spesifik
+                for (let i = 1; i <= 4; i++) {
+                    // Ambil prompt per slide, jika kosong maka fallback ke global theme + pesan default
+                    let slideSpecificPrompt = slidePrompts[i].trim();
+                    if (!slideSpecificPrompt) {
+                        slideSpecificPrompt = globalTheme.trim() 
+                            ? `Slide ${i} tentang "${globalTheme}", visual estetik, gaya ${style}, konten carousel Instagram, komposisi premium`
+                            : `Slide ${i} - konten inspiratif tentang kesuksesan & growth, gaya ${style}, desain modern`;
+                    }
+                    
+                    const randomSeed = Math.floor(Math.random() * 999999);
+                    
+                    // Enhancement prompt dengan gaya + kualitas carousel Instagram
+                    let enhancedPrompt = `${slideSpecificPrompt}, gaya desain: ${style}, instagram carousel design, cinematic lighting, modern aesthetic, ultra detailed, viral social media content, professional typography, high quality 4k, unique composition, aspect ratio 4:5, engaging layout, rich colors, social media trending, different scene for each slide`;
+                    
+                    // Tambahkan variasi unik berdasarkan nomor slide
+                    if (i === 1) enhancedPrompt += ", bold cover title, eye-catching opener, dramatic entrance";
+                    if (i === 2) enhancedPrompt += ", educational infographic style, clean cards, bullet points visual";
+                    if (i === 3) enhancedPrompt += ", emotional storytelling, warm atmosphere, heartfelt moment";
+                    if (i === 4) enhancedPrompt += ", powerful conclusion, celebration energy, call to action";
+                    
+                    // Gunakan Pollinations AI
+                    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+                        enhancedPrompt
+                    )}?width=1024&height=1280&seed=${randomSeed}&model=flux&nologo=1`;
+                    
+                    generatedImages.push({
+                        id: i,
+                        url: imageUrl,
+                        customPrompt: slideSpecificPrompt,
+                        style: style,
+                        fullEnhancedPrompt: enhancedPrompt.substring(0, 120) + "..."
+                    });
+                }
 
-        {/* Form */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/10 mb-10">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block mb-2 text-sm text-gray-300">
-                Prompt Konten
-              </label>
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Contoh: Hidup adalah perjuangan jangan menyerah..."
-                className="w-full h-40 rounded-2xl bg-black/30 border border-white/10 p-4 outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+                setImages(generatedImages);
+            } catch (error) {
+                console.error("Generation error:", error);
+                alert("Gagal generate gambar AI. Coba lagi nanti atau periksa koneksi internet.");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-            <div className="space-y-6">
-              <div>
-                <label className="block mb-2 text-sm text-gray-300">
-                  Gaya Desain
-                </label>
-                <select
-                  value={style}
-                  onChange={(e) => setStyle(e.target.value)}
-                  className="w-full rounded-2xl bg-black/30 border border-white/10 p-4 outline-none"
-                >
-                  {styles.map((item) => (
-                    <option key={item}>{item}</option>
-                  ))}
-                </select>
-              </div>
+        // Download semua gambar (sequential)
+        const downloadAllImages = async () => {
+            if (!images.length) {
+                alert("Tidak ada gambar untuk diunduh. Generate carousel terlebih dahulu!");
+                return;
+            }
+            setDownloadProgress(true);
+            let successCount = 0;
+            try {
+                for (let idx = 0; idx < images.length; idx++) {
+                    const img = images[idx];
+                    try {
+                        const response = await fetch(img.url, { mode: 'cors', cache: 'force-cache' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        const blob = await response.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = blobUrl;
+                        link.download = `carousel_${style.toLowerCase()}_slide${img.id}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(blobUrl);
+                        successCount++;
+                        await new Promise(r => setTimeout(r, 300));
+                    } catch (err) {
+                        console.warn(`Download slide ${img.id} gagal:`, err);
+                        window.open(img.url, '_blank');
+                    }
+                }
+                if (successCount === images.length) alert(`✅ Berhasil mengunduh ${successCount} slide carousel!`);
+                else alert(`⚠️ ${successCount} dari ${images.length} slide berhasil diunduh.`);
+            } catch (error) {
+                alert("Terjadi kesalahan saat mengunduh massal.");
+            } finally {
+                setDownloadProgress(false);
+            }
+        };
 
-              <div className="bg-black/30 rounded-2xl p-5 border border-white/10">
-                <h3 className="font-semibold mb-3 text-lg">
-                  Fitur AI
-                </h3>
+        const downloadSingleImage = async (img) => {
+            try {
+                const response = await fetch(img.url);
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = `carousel_${style.toLowerCase()}_slide${img.id}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(blobUrl);
+            } catch (err) {
+                alert("Gagal mengunduh, coba klik kanan dan simpan gambar.");
+                window.open(img.url, '_blank');
+            }
+        };
 
-                <ul className="space-y-3 text-gray-300 text-sm">
-                  <li>✨ Generate gambar otomatis</li>
-                  <li>🎨 Template carousel Instagram</li>
-                  <li>⚡ Desain aesthetic modern</li>
-                  <li>📱 Rasio 4:5 & 9:16</li>
-                  <li>🚀 Export siap upload</li>
-                </ul>
-              </div>
+        // Reset semua prompt per slide
+        const resetSlidePrompts = () => {
+            setSlidePrompts({ 1: "", 2: "", 3: "", 4: "" });
+            setGlobalTheme("");
+        };
 
-              <button
-                onClick={generateImages}
-                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 transition-all font-semibold text-lg shadow-lg"
-              >
-                {loading ? "Generating AI Images..." : "Generate Carousel"}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Preview */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold">Preview Carousel</h2>
-
-            {images.length > 0 && (
-              <button className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 transition-all">
-                Download Semua
-              </button>
-            )}
-          </div>
-
-          {loading && (
-            <div className="grid md:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((item) => (
-                <div
-                  key={item}
-                  className="aspect-[4/5] rounded-3xl bg-white/10 animate-pulse"
-                />
-              ))}
-            </div>
-          )}
-
-          {!loading && images.length > 0 && (
-            <div className="grid md:grid-cols-4 gap-6">
-              {images.map((img) => (
-                <div
-                  key={img.id}
-                  className="relative group overflow-hidden rounded-3xl shadow-2xl border border-white/10"
-                >
-                  <img
-                    src={img.url}
-                    alt="AI Generated"
-                    loading="lazy"
-                    crossOrigin="anonymous"
-                    onError={(e) => {
-                      e.target.src = `https://picsum.photos/seed/${img.id}/600/900`;
-                    }}
-                    className="w-full aspect-[4/5] object-cover group-hover:scale-105 transition-all duration-500"
-                  />
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-4">
-                    <div>
-                      <p className="font-bold text-lg">{style}</p>
-                      <p className="text-sm text-gray-300 line-clamp-2">
-                        {prompt}
-                      </p>
+        return (
+            <div className="min-h-screen p-4 md:p-6 lg:p-8">
+                <div className="max-w-7xl mx-auto">
+                    {/* Header Section */}
+                    <div className="text-center mb-8 animate-fade-in-up">
+                        <div className="inline-flex items-center gap-2 bg-blue-500/10 backdrop-blur-sm px-4 py-2 rounded-full border border-blue-500/30 mb-4">
+                            <i className="fas fa-sliders-h text-blue-400"></i>
+                            <span className="text-sm font-medium text-blue-300">Kontrol Penuh • Prompt Per Slide</span>
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-extrabold mb-3 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-500 bg-clip-text text-transparent">
+                            AI Carousel <span className="underline decoration-purple-500">Pro</span>
+                        </h1>
+                        <p className="text-gray-300 text-md max-w-2xl mx-auto">
+                            🎯 <span className="font-semibold">Atur prompt UNIK untuk setiap slide!</span> Buat cerita carousel yang lebih personal, presisi, dan powerful.
+                        </p>
                     </div>
-                  </div>
+
+                    {/* Panel Global Tema + Gaya + Tombol Cepat */}
+                    <div className="glass-card rounded-3xl p-6 md:p-7 shadow-2xl mb-10">
+                        <div className="grid lg:grid-cols-3 gap-6">
+                            {/* Global Theme */}
+                            <div className="lg:col-span-1">
+                                <label className="block text-sm font-semibold text-gray-200 mb-2 flex items-center gap-2">
+                                    <i className="fas fa-globe text-blue-400"></i> Tema Utama / Ide Konten (Opsional)
+                                </label>
+                                <textarea
+                                    value={globalTheme}
+                                    onChange={(e) => setGlobalTheme(e.target.value)}
+                                    placeholder="Contoh: '5 kebiasaan orang sukses' atau 'Perjalanan startup dari nol' atau 'Mindset kaya vs miskin'..."
+                                    className="w-full h-28 rounded-xl bg-black/40 border border-white/20 p-3 outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-gray-400 resize-none"
+                                />
+                                <button 
+                                    onClick={autoFillSlidePromptsFromTheme}
+                                    className="mt-2 text-xs bg-purple-600/40 hover:bg-purple-600/70 transition px-3 py-1.5 rounded-full w-full flex items-center justify-center gap-1"
+                                >
+                                    <i className="fas fa-magic"></i> Auto-Generate Prompt Setiap Slide
+                                </button>
+                            </div>
+
+                            {/* Gaya Desain */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-200 mb-2 flex items-center gap-2">
+                                    <i className="fas fa-palette text-pink-400"></i> Gaya Visual Global
+                                </label>
+                                <select
+                                    value={style}
+                                    onChange={(e) => setStyle(e.target.value)}
+                                    className="w-full rounded-xl bg-black/40 border border-white/20 p-3 outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                                >
+                                    {styles.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <p className="text-gray-400 text-xs mt-2">Gaya ini akan diaplikasikan ke semua slide + prompt individual</p>
+                            </div>
+
+                            {/* Tombol Aksi Utama */}
+                            <div className="flex flex-col gap-3 justify-end">
+                                <button
+                                    onClick={generateImages}
+                                    disabled={loading}
+                                    className={`w-full py-3.5 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${loading ? 'bg-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:scale-[1.01]'}`}
+                                >
+                                    {loading ? <><i className="fas fa-spinner fa-spin"></i> Generating 4 Slides...</> : <><i className="fas fa-layer-group"></i> Generate Carousel (4 Slide)</>}
+                                </button>
+                                <button onClick={resetSlidePrompts} className="text-gray-400 text-xs hover:text-white transition flex items-center justify-center gap-1"><i className="fas fa-undo-alt"></i> Reset semua prompt</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* PROMPT PER SLIDE - CUSTOM UNTUK MASING-MASING SLIDE */}
+                    <div className="mb-12">
+                        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                            <h2 className="text-xl font-bold flex items-center gap-2"><i className="fas fa-pen-ruler text-yellow-400"></i> ✏️ Atur Prompt untuk Setiap Slide (Individual)</h2>
+                            <span className="text-xs text-gray-400 bg-black/30 px-3 py-1 rounded-full">Setiap slide punya cerita unik</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                            {[1, 2, 3, 4].map((slideNum) => (
+                                <div key={slideNum} className="glass-card rounded-xl p-4 border-l-4 border-l-blue-500">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="bg-blue-500/40 text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center">#{slideNum}</span>
+                                            <span className="font-semibold text-sm text-gray-200">Slide {slideNum}</span>
+                                        </div>
+                                        <i className={`fas ${slideNum === 1 ? 'fa-play-circle' : slideNum === 4 ? 'fa-flag-checkered' : 'fa-image'} text-gray-400 text-sm`}></i>
+                                    </div>
+                                    <textarea
+                                        value={slidePrompts[slideNum]}
+                                        onChange={(e) => updateSlidePrompt(slideNum, e.target.value)}
+                                        placeholder={`Prompt spesifik untuk slide ${slideNum} ...\nContoh: "Slide ${slideNum} menampilkan visual tentang ..."`}
+                                        className="w-full h-32 rounded-lg bg-black/40 border border-white/20 p-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-400 text-white placeholder:text-gray-500 resize-none"
+                                    />
+                                    <p className="text-[11px] text-gray-400 mt-1 line-clamp-1">
+                                        {slidePrompts[slideNum] ? `${slidePrompts[slideNum].substring(0, 50)}...` : "Kosong → akan pakai tema global"}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="text-center text-gray-500 text-xs mt-3">
+                            💡 <span className="text-blue-300">Tips:</span> Isi prompt berbeda untuk setiap slide agar carousel memiliki alur cerita yang kuat. Kosongkan jika ingin menggunakan tema utama otomatis.
+                        </div>
+                    </div>
+
+                    {/* PREVIEW SECTION Carousel Hasil Generate */}
+                    <div>
+                        <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+                            <div>
+                                <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+                                    <i className="fas fa-images text-pink-400"></i>
+                                    🖼️ Preview Carousel (4 Slide)
+                                </h2>
+                                <p className="text-gray-400 text-sm">Setiap slide dihasilkan dari prompt individual + gaya <span className="text-blue-300 font-semibold">{style}</span></p>
+                            </div>
+                            {images.length > 0 && !loading && (
+                                <button
+                                    onClick={downloadAllImages}
+                                    disabled={downloadProgress}
+                                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 transition-all shadow-lg flex items-center gap-2 font-semibold"
+                                >
+                                    {downloadProgress ? <><i className="fas fa-spinner fa-spin"></i> Download...</> : <><i className="fas fa-download"></i> Download Semua Slide</>}
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Loading Skeleton */}
+                        {loading && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {[1,2,3,4].map(i => <div key={i} className="aspect-[4/5] rounded-2xl bg-white/5 animate-pulse border border-white/10" />)}
+                            </div>
+                        )}
+
+                        {/* Hasil Gambar dengan Highlight Prompt Per Slide */}
+                        {!loading && images.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {images.map((img) => (
+                                    <div key={img.id} className="relative group carousel-card rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-black/20">
+                                        <img
+                                            src={img.url}
+                                            alt={`Slide ${img.id} - ${style}`}
+                                            loading="lazy"
+                                            crossOrigin="anonymous"
+                                            onError={(e) => { e.target.src = `https://picsum.photos/seed/${img.id}_${Date.now()}/800/1000`; }}
+                                            className="w-full aspect-[4/5] object-cover transition duration-700 group-hover:scale-105"
+                                        />
+                                        {/* Overlay dengan informasi prompt */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex flex-col justify-end p-4">
+                                            <div className="backdrop-blur-md bg-black/50 rounded-xl p-3 border border-white/20">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="bg-blue-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">{img.id}</span>
+                                                        <span className="font-bold text-white text-xs">{style}</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => downloadSingleImage(img)}
+                                                        className="bg-white/20 hover:bg-blue-500 rounded-full p-1.5 transition"
+                                                        title="Download slide"
+                                                    >
+                                                        <i className="fas fa-download text-white text-xs"></i>
+                                                    </button>
+                                                </div>
+                                                <p className="text-gray-100 text-xs font-medium mt-1 line-clamp-2">
+                                                    📝 Prompt slide ini:
+                                                </p>
+                                                <p className="text-gray-200 text-[11px] line-clamp-3 italic">
+                                                    "{img.customPrompt.length > 80 ? img.customPrompt.substring(0,80) + "…" : img.customPrompt}"
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {/* Tooltip cepat */}
+                                        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 text-[10px] text-white">
+                                            <i className="fas fa-pen-fine mr-1"></i> Prompt unik
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Empty State + contoh */}
+                        {!loading && images.length === 0 && (
+                            <div className="glass-card rounded-3xl p-14 text-center border border-dashed border-white/20">
+                                <div className="text-6xl mb-4">✨🎨</div>
+                                <h3 className="text-2xl font-semibold text-gray-200 mb-2">Atur Prompt Per Slide, lalu Generate</h3>
+                                <p className="text-gray-400 max-w-lg mx-auto">Tulis prompt berbeda untuk setiap slide agar carousel Anda punya alur cerita yang kuat, atau cukup isi tema global lalu klik "Auto-Generate Prompt Setiap Slide".</p>
+                                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                                    <button onClick={() => {
+                                        setSlidePrompts({
+                                            1: "Slide pembuka: 'Rahasia sukses financial freedom', visual mewah, pria/wanita percaya diri, estetik gold",
+                                            2: "Slide 2: Ilustrasi kebiasaan saving & investasi, ikon charts, modern flat design",
+                                            3: "Slide 3: Emotional story seseorang yang berhasil keluar dari hutang, perjalanan inspiratif",
+                                            4: "Slide 4: Penutup dengan quote powerful 'Mulai dari 1% hari ini', background sunset gradasi"
+                                        });
+                                        setGlobalTheme("Financial Freedom Journey");
+                                    }} className="text-xs bg-white/10 px-3 py-2 rounded-full hover:bg-white/20">💰 Contoh: Financial Freedom</button>
+                                    <button onClick={() => {
+                                        setSlidePrompts({
+                                            1: "COVER: 'Mental Juara: Mindset Juara Sejati', visual atlet yang fokus",
+                                            2: "Slide 2: 3 pilar mindset juara (disiplin, fokus, konsistensi) tipografi bold",
+                                            3: "Slide 3: visual perjuangan, keringat, latihan, semangat pantang menyerah",
+                                            4: "Slide 4: 'Kemenangan Dimulai dari Pikiran' background podium, gemilang"
+                                        });
+                                        setGlobalTheme("Mindset Juara");
+                                    }} className="text-xs bg-white/10 px-3 py-2 rounded-full hover:bg-white/20">🧠 Contoh: Mindset Juara</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer & Info */}
+                    <div className="mt-16 text-center text-gray-500 text-sm border-t border-white/10 pt-8 flex flex-wrap justify-between items-center gap-3">
+                        <div><i className="fas fa-crown text-yellow-500 mr-1"></i> AI Carousel Pro • Prompt per Slide • Pollinations.ai Engine</div>
+                        <div className="flex gap-3">
+                            <span className="text-green-400 text-xs"><i className="fas fa-check-circle"></i> 4 Slide Unik</span>
+                            <span className="text-blue-400 text-xs"><i className="fas fa-palette"></i> Gaya Konsisten</span>
+                        </div>
+                    </div>
                 </div>
-              ))}
             </div>
-          )}
+        );
+    };
 
-          {!loading && images.length === 0 && (
-            <div className="border border-dashed border-white/10 rounded-3xl p-20 text-center text-gray-400 bg-black/20">
-              <p className="text-xl">
-                Hasil carousel AI akan muncul di sini
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="mt-20 text-center text-gray-500 text-sm">
-          Mini App AI Carousel Generator • React + TailwindCSS
-        </div>
-      </div>
-    </div>
-  );
-}
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<AICarouselGenerator />);
+</script>
+</body>
+</html>
